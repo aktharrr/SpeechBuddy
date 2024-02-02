@@ -1,15 +1,16 @@
-import openai
+from openai import OpenAI
 import pyttsx3
 import speech_recognition as sr
 import random
 import os
 from dotenv import load_dotenv
 
+load_dotenv()
+openAIClient = OpenAI()
+
 class JarvisVoiceAssistant:
     def __init__(self, model_id='gpt-3.5-turbo', log_file='chat_log.txt'):
         self.model_id = model_id
-        load_dotenv()
-        openai.api_key = os.getenv('OPENAI_API_KEY')
         self.engine = pyttsx3.init()
         self.set_engine_properties()
         self.recognizer = sr.Recognizer()
@@ -47,7 +48,7 @@ class JarvisVoiceAssistant:
         self.conversation.append({'role': 'user', 'content': text})
         if len(self.conversation) > 5:  # Keep the last 5 exchanges
             self.conversation = self.conversation[-5:]
-        response = openai.ChatCompletion.create(
+        response = openAIClient.chat.completions.create(
             model=self.model_id,
             messages=self.conversation
         )
@@ -89,17 +90,17 @@ class JarvisVoiceAssistant:
             print("Say 'Jarvis' to start...")
             audio_data = self.listen_for_command()
             transcription = self.speech_to_text(audio_data)
-            if "jarvis" in transcription.lower():
-                self.interaction_counter += 1
-                greeting = self.activate_assistant()
-                self.text_to_speech(greeting)
-                print(greeting)
-                while True:
-                    audio_data = self.listen_for_command()
-                    text = self.speech_to_text(audio_data)
-                    if text:
-                        response = self.chat_gpt_conversation(text)
-                        self.text_to_speech(response)
+            #if "jarvis" in transcription.lower():
+            self.interaction_counter += 1
+            greeting = self.activate_assistant()
+            self.text_to_speech(greeting)
+            print(greeting)
+            while True:
+                audio_data = self.listen_for_command()
+                text = self.speech_to_text(audio_data)
+                if text:
+                    response = self.chat_gpt_conversation(text)
+                    self.text_to_speech(response)
 
 def main():
     JarvisVoiceAssistant().handle_conversation()
