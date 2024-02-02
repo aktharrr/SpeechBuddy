@@ -23,15 +23,15 @@ class JarvisVoiceAssistant:
         voices = self.engine.getProperty('voices')
         self.engine.setProperty('voice', voices[voice_index].id)
 
-    def speak_text(self, text):
-        self.engine.say(text)
-        self.engine.runAndWait()
-
     def append_to_log(text):
         with open("chat_log.txt", "a") as f:
             f.write(text + "\n")
 
-    def transcribe_audio_to_text(self, audio_data):
+    def text_to_speech(self, text):
+        self.engine.say(text)
+        self.engine.runAndWait()
+
+    def speech_to_text(self, audio_data):
         try:
             text = self.recognizer.recognize_google(audio_data)
             return text
@@ -88,18 +88,18 @@ class JarvisVoiceAssistant:
         while True:
             print("Say 'Jarvis' to start...")
             audio_data = self.listen_for_command()
-            transcription = self.transcribe_audio_to_text(audio_data)
+            transcription = self.speech_to_text(audio_data)
             if "jarvis" in transcription.lower():
                 self.interaction_counter += 1
                 greeting = self.activate_assistant()
-                self.speak_text(greeting)
+                self.text_to_speech(greeting)
                 print(greeting)
                 while True:
                     audio_data = self.listen_for_command()
-                    text = self.transcribe_audio_to_text(audio_data)
+                    text = self.speech_to_text(audio_data)
                     if text:
                         response = self.chat_gpt_conversation(text)
-                        self.speak_text(response)
+                        self.text_to_speech(response)
 
 def main():
     JarvisVoiceAssistant().handle_conversation()
