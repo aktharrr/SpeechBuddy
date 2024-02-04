@@ -50,15 +50,16 @@ class JarvisVoiceAssistant:
             self.conversation = self.conversation[-5:]
         response = openAIClient.chat.completions.create(
             model=self.model_id,
-            messages=self.conversation
+            messages=self.conversation,
+            max_tokens=50
         )
         reply = response.choices[0].message.content.strip()
         self.conversation.append({'role': 'assistant', 'content': reply})
         self.append_to_log(f"Jarvis: {reply}")
         print(f"Jarvis: {reply}")
 
-        api_usage = response['usage']
-        print('\n\t ** Total token consumed: {0} **\n'.format(api_usage['total_tokens']))
+        api_usage = response.usage
+        print('\n\t ** Total token consumed: {0} **\n'.format(api_usage.total_tokens))
 
         return reply
 
