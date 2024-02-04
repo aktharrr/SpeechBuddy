@@ -1,4 +1,5 @@
 from openai import OpenAI
+import pyttsx3
 from pydub import AudioSegment
 from pydub.playback import play
 import speech_recognition as sr
@@ -11,30 +12,40 @@ load_dotenv()
 openAIClient = OpenAI()
 
 class SpeechBuddyVoiceAssistant:
-    def __init__(self, model_id='gpt-3.5-turbo', log_file='chat_log.txt'):
+    def __init__(self, model_id='gpt-3.5-turbo', log_file='chat_log.txt', useOpenAiTTS=False, GPTinitialMessage=""):
         self.model_id = model_id
         self.recognizer = sr.Recognizer()
         self.conversation = []
         self.log_file = log_file
         self.clear_log_file()
+        self.GPTinitialMessage=GPTinitialMessage
+        self.useOpenAiTTS = useOpenAiTTS
+        if not useOpenAiTTS:
+            self.engine = pyttsx3.init()
+            self.set_engine_properties()
+
+    def set_engine_properties(self, rate=180, voice_index=0):
+        self.engine.setProperty('rate', rate)
+        voices = self.engine.getProperty('voices')
+        self.engine.setProperty('voice', voices[voice_index].id)
 
     def append_to_log(text):
         with open("chat_log.txt", "a") as f:
             f.write(text + "\n")
 
     def text_to_speech(self, text):
-        response = openAIClient.audio.speech.create(
-            model="tts-1",
-            voice="nova",
-            input=text,
-        )
-        audio_data = BytesIO(response.content)
-    
-        # Create AudioSegment from the in-memory audio data
-        audio = AudioSegment.from_file(audio_data)
-        
-        # Play the audio
-        play(audio)
+        if self.useOpenAiTTS:
+            response = openAIClient.audio.speech.create(
+                model="tts-1",
+                voice="nova",
+                input=text,
+            )
+            audio_data = BytesIO(response.content)
+            audio = AudioSegment.from_file(audio_data)
+            play(audio)
+        else:
+            self.engine.say(text)
+            self.engine.runAndWait()
 
     def speech_to_text(self, audio_data):
         try:
@@ -83,7 +94,7 @@ class SpeechBuddyVoiceAssistant:
     def handle_conversation(self):
         while True:
             print("Say something to start the conversation")
-            self.conversation.append({'role': 'assistant', 'content': 'Chat with me as if you are a grammatical correcting assistant. your name is speech buddy. start the cobersation with introducing your self'})
+            self.conversation.append({'role': 'system', 'content': self.GPTinitialMessage})
             while True:
                 audio_data = self.listen_for_command()
                 text = self.speech_to_text(audio_data)
@@ -92,7 +103,10 @@ class SpeechBuddyVoiceAssistant:
                     self.text_to_speech(response)
 
 def main():
-    SpeechBuddyVoiceAssistant().handle_conversation()
+    SpeechBuddyVoiceAssistant(
+        useOpenAiTTS=True, 
+        GPTinitialMessage="Chat with me as if you are a grammatical correcting assistant. your name is speech buddy. start the cobersation with introducing your self"
+        ).handle_conversation()
 
 if __name__ == "__main__":
     main()
